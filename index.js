@@ -35,6 +35,17 @@ async function run() {
             res.send('Hello i am ready')
         })
 
+        // view biodata api
+        app.get('/view-biodata', async (req, res) => {
+            try {
+                const email = req.query.email;
+                const result = await allUsers.findOne({ userEmail: email })
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
         // save all the new account details
         app.post('/manage-users', async (req, res) => {
             try {
