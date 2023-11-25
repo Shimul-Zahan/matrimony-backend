@@ -12,7 +12,7 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@shimulclaster1.85diumq.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -30,6 +30,7 @@ async function run() {
         // await client.connect();
         const allUsers = client.db("matrmonyDB").collection("allUsers");
         const manageUsers = client.db("matrmonyDB").collection("manageUsers");
+        const premiumRequests = client.db("matrmonyDB").collection("premiumRequests");
 
         app.get('/', async (req, res) => {
             res.send('Hello i am ready')
@@ -56,6 +57,18 @@ async function run() {
                 }
                 const result = await manageUsers.insertOne(userInfo);
                 res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // premium request api
+        app.post('/premium-request/:id', async (req, res) => {
+            try {
+                const id = req.params.id
+                console.log('request premium id', id)
+                // const result = await manageUsers.insertOne({_id: new ObjectId(id)});
+                // res.send(result);
             } catch (error) {
                 console.log(error)
             }
