@@ -47,8 +47,34 @@ async function run() {
             }
         })
 
-        // save all the new account details
-        app.post('/manage-users', async (req, res) => {
+        // all statistics
+        app.get('/statistics', async (req, res) => {
+            try {
+                const users = await allUsers.estimatedDocumentCount()
+                const male = await allUsers.countDocuments({ biodataType : 'male'})
+                const female = await allUsers.countDocuments({ biodataType : 'female'})
+                const premiumMember = await premiumRequests.estimatedDocumentCount()
+                res.send({users, male, female, premiumMember});
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // manage users
+        app.get('/manage-users', async (req, res) => {
+            try {
+                const users = await allUsers.estimatedDocumentCount()
+                const male = await allUsers.countDocuments({ biodataType: 'male' })
+                const female = await allUsers.countDocuments({ biodataType: 'female' })
+                const premiumMember = await premiumRequests.estimatedDocumentCount()
+                res.send({ users, male, female, premiumMember });
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // save all the new account details in db
+        app.post('/users', async (req, res) => {
             try {
                 const userInfo = req.body;
                 const available = await manageUsers.findOne({ email: userInfo.email })
@@ -66,14 +92,14 @@ async function run() {
         app.post('/premium-request', async (req, res) => {
             try {
                 const requestedData = req.body
-                const query = { userEmail: requestedData.userEmail }
+                const query = { userEmail: requestedData.email }
                 const updateDoc = {
                     $set: {
                         premiumRequestStatus: 'pending'
                     },
                 };
-                const updateStatus = await allUsers.updateOne(query, updateDoc)
-                const result = await premiumRequests.insertOne({ premiumRequestStatus: 'pending', ...requestedData });
+                await allUsers.updateOne(query, updateDoc)
+                const result = await premiumRequests.insertOne(requestedData);
                 res.send(result);
             } catch (error) {
                 console.log(error)
