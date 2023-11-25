@@ -36,6 +36,16 @@ async function run() {
             res.send('Hello i am ready')
         })
 
+        // get all data
+        app.get('/all-users', async (req, res) => {
+            try {
+                const result = await allUsers.find().toArray()
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
         // view biodata api
         app.get('/view-biodata', async (req, res) => {
             try {
@@ -64,6 +74,16 @@ async function run() {
         app.get('/manage-users', async (req, res) => {
             try {
                 const result = await manageUsers.find().toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // manage premium request
+        app.get('/manage-premium-request', async (req, res) => {
+            try {
+                const result = await premiumRequests.find().toArray();
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -116,6 +136,28 @@ async function run() {
                 const count = await allUsers.estimatedDocumentCount();
                 const result = await allUsers.insertOne({biodataId: count + 1, ...biodata})
                 res.send(result)
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+
+        // approve premium
+        app.patch('/approve-premium', async (req, res) => {
+            try {
+                const id = parseInt(req.query.id)
+                const query = { biodataId: id }
+                const updateDoc = {
+                    $set: {
+                        premiumRequestStatus: 'approved',
+                        accountType: 'premium'
+                    },
+                };
+                const updateResult = await allUsers.updateOne(query, updateDoc);
+                console.log(updateResult, 'update result')
+                const result = await premiumRequests.deleteOne(query)
+                console.log(result, 'delete result')
+                res.send(updateResult);
             } catch (error) {
                 console.log(error)
             }
