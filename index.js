@@ -63,12 +63,18 @@ async function run() {
         })
 
         // premium request api
-        app.post('/premium-request/:id', async (req, res) => {
+        app.post('/premium-request', async (req, res) => {
             try {
-                const id = req.params.id
-                console.log('request premium id', id)
-                // const result = await manageUsers.insertOne({_id: new ObjectId(id)});
-                // res.send(result);
+                const requestedData = req.body
+                const query = { userEmail: requestedData.userEmail }
+                const updateDoc = {
+                    $set: {
+                        premiumRequestStatus: 'pending'
+                    },
+                };
+                const updateStatus = await allUsers.updateOne(query, updateDoc)
+                const result = await premiumRequests.insertOne({ premiumRequestStatus: 'pending', ...requestedData });
+                res.send(result);
             } catch (error) {
                 console.log(error)
             }
