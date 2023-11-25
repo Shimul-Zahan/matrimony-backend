@@ -63,11 +63,8 @@ async function run() {
         // manage users
         app.get('/manage-users', async (req, res) => {
             try {
-                const users = await allUsers.estimatedDocumentCount()
-                const male = await allUsers.countDocuments({ biodataType: 'male' })
-                const female = await allUsers.countDocuments({ biodataType: 'female' })
-                const premiumMember = await premiumRequests.estimatedDocumentCount()
-                res.send({ users, male, female, premiumMember });
+                const result = await manageUsers.find().toArray();
+                res.send(result);
             } catch (error) {
                 console.log(error)
             }
