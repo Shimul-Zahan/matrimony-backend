@@ -10,7 +10,6 @@ app.use(cors({
 }));
 app.use(express.json())
 
-console.log(process.env.DB_NAME, process.env.DB_PASS)
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -30,17 +29,40 @@ async function run() {
 
         // await client.connect();
         const allUsers = client.db("matrmonyDB").collection("allUsers");
+        const manageUsers = client.db("matrmonyDB").collection("manageUsers");
 
         app.get('/', async (req, res) => {
             res.send('Hello i am ready')
         })
 
+        // save all the new account details
+        app.post('/manage-users', async (req, res) => {
+            try {
+                const userInfo = req.body;
+                const available = await manageUsers.findOne({ email: userInfo.email })
+                if (available) {
+                    return res.send({message: 'user already in database'})
+                }
+                const result = await manageUsers.insertOne(userInfo);
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // save the users biodata 
         app.post('/edit-biodata', async (req, res) => {
             try {
                 const biodata = req.body;
+                const email = req.query.email;
+                const query = {userEmail: email}
+                const available = await allUsers.findOne(query);
+                if (available) {
+                    return res.send({message: 'Email already use. Please Login with a new email and add your biodata.'})
+                }
                 const count = await allUsers.estimatedDocumentCount();
                 const result = await allUsers.insertOne({biodataId: count + 1, ...biodata})
-                console.log(result)
+                res.send(result)
             } catch (error) {
                 console.log(error)
             }
