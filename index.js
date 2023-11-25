@@ -46,6 +46,17 @@ async function run() {
             }
         })
 
+        // viewdetails
+        app.get('/user/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const result = await allUsers.findOne({_id: new ObjectId(id)})
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
         // view biodata api
         app.get('/view-biodata', async (req, res) => {
             try {
@@ -154,10 +165,14 @@ async function run() {
                     },
                 };
                 const updateResult = await allUsers.updateOne(query, updateDoc);
-                console.log(updateResult, 'update result')
-                const result = await premiumRequests.deleteOne(query)
-                console.log(result, 'delete result')
-                res.send(updateResult);
+                const updateDoc2 = {
+                    $set: {
+                        premiumRequestStatus: 'approved',
+                    },
+                }
+                const result = await premiumRequests.updateOne(query, updateDoc2)
+                console.log(result)
+                res.send(result);
             } catch (error) {
                 console.log(error)
             }
