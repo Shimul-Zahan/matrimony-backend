@@ -3,7 +3,8 @@ const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
-
+const stripe = require("stripe")('sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk5W0Z2N0syCZ31WYnu3BeB0StuCuiBP5WBdIh4lqAWbPQZSmcgv4009tnwiwQR');
+// sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk5W0Z2N0syCZ31WYnu3BeB0StuCuiBP5WBdIh4lqAWbPQZSmcgv4009tnwiwQR
 app.use(cors({
     origin: ['http://localhost:5173'],
     credentials: true,
@@ -32,6 +33,7 @@ async function run() {
         const manageUsers = client.db("matrmonyDB").collection("manageUsers");
         const premiumRequests = client.db("matrmonyDB").collection("premiumRequests");
         const favouriteCollection = client.db("matrmonyDB").collection("favouriteCollection");
+        const requesterCollections = client.db("matrmonyDB").collection("requesterCollections");
 
         app.get('/', async (req, res) => {
             res.send('Hello i am ready')
@@ -215,6 +217,34 @@ async function run() {
                 console.log(error)
             }
         })
+
+        // create payment intent
+        app.post("/create-payment-intent", async (req, res) => {
+            const { price } = req.body;
+            const taka = parseFloat(price * 100);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: taka,
+                currency: 'usd',
+                payment_method_types: [
+                    'card'
+                ]
+            })
+            res.send({ clientSecret: paymentIntent.client_secret });
+        })
+
+        app.post("/payments", async (req, res) => {
+            const requesterData = req.body;
+            const query = { $and: [{ neededID: requesterData.neededID, requesterEmail: requesterData.requesterEmail }] }
+            const available = await requesterCollections.findOne(query)
+            if (available) {
+                return res.send({ message: 'Already requested' })
+            }
+            const result = await requesterCollections.insertOne(requesterData);
+            console.log(result)
+            res.send(result);
+        })
+
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
