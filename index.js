@@ -31,6 +31,7 @@ async function run() {
         const allUsers = client.db("matrmonyDB").collection("allUsers");
         const manageUsers = client.db("matrmonyDB").collection("manageUsers");
         const premiumRequests = client.db("matrmonyDB").collection("premiumRequests");
+        const favouriteCollection = client.db("matrmonyDB").collection("favouriteCollection");
 
         app.get('/', async (req, res) => {
             res.send('Hello i am ready')
@@ -91,6 +92,18 @@ async function run() {
             }
         })
 
+        // favourite biodatas
+        app.get('/favourite-biodatas', async (req, res) => {
+            try {
+                const email = req.query.email;
+                console.log(email)
+                const result = await favouriteCollection.find({ userEmail : email}).toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
         // manage premium request
         app.get('/manage-premium-request', async (req, res) => {
             try {
@@ -110,6 +123,21 @@ async function run() {
                     return res.send({message: 'user already in database'})
                 }
                 const result = await manageUsers.insertOne(userInfo);
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // post favourite data
+        app.post('/add-to-favourite', async (req, res) => {
+            try {
+                const userInfo = req.body;
+                const available = await favouriteCollection.findOne({ $and: [{ biodataId: userInfo.biodataId }, { userEmail: userInfo.userEmail }] })
+                if (available) {
+                    return res.send({message: 'You choosen biodata already exist in your favourite biodata list'})
+                }
+                const result = await favouriteCollection.insertOne(userInfo);
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -172,6 +200,16 @@ async function run() {
                 }
                 const result = await premiumRequests.updateOne(query, updateDoc2)
                 console.log(result)
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        app.delete('/delete-favourite-bios', async (req, res) => {
+            try {
+                const id = req.query.id;
+                const result = await favouriteCollection.deleteOne({ _id: new ObjectId(id) });
                 res.send(result);
             } catch (error) {
                 console.log(error)

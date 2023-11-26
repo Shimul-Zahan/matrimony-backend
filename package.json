@@ -7,5 +7,25 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.3.0",
     "mongoose": "^8.0.1"
-  }
+  },
+  "name": "serversite",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/programming-hero-web-course1/b8a12-server-side-AlgoWebBot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/programming-hero-web-course1/b8a12-server-side-AlgoWebBot/issues"
+  },
+  "homepage": "https://github.com/programming-hero-web-course1/b8a12-server-side-AlgoWebBot#readme",
+  "description": ""
 }
