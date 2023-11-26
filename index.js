@@ -116,6 +116,17 @@ async function run() {
             }
         })
 
+        // get all contact requested id
+        app.get('/contact-request', async (req, res) => {
+            try {
+                const email = req.query.email
+                const result = await requesterCollections.find({ requesterEmail: email }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
         // save all the new account details in db
         app.post('/users', async (req, res) => {
             try {
@@ -212,6 +223,17 @@ async function run() {
             try {
                 const id = req.query.id;
                 const result = await favouriteCollection.deleteOne({ _id: new ObjectId(id) });
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+
+        app.delete('/delete-requested-contact', async (req, res) => {
+            try {
+                const id = req.query.id;
+                const result = await requesterCollections.deleteOne({ _id: new ObjectId(id) });
                 res.send(result);
             } catch (error) {
                 console.log(error)
