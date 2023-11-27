@@ -214,6 +214,29 @@ async function run() {
             }
         })
 
+        // update user biodata
+        app.patch('/update-biodata', async (req, res) => {
+            try {
+                const email = req.query.email
+                const updateBiodata = req.body;
+                const query = { userEmail: email };
+                const available = await allUsers.findOne()
+                delete updateBiodata._id;
+                delete available._id;
+                const update = {
+                    ...available,
+                    ...updateBiodata
+                }
+                console.log(update)
+                const result = await allUsers.updateOne(query, {$set: update});
+                res.send(result);
+                console.log(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+
         // post favourite data
         app.post('/add-to-favourite', async (req, res) => {
             try {
@@ -404,7 +427,6 @@ async function run() {
             console.log(result)
             res.send(result);
         })
-
 
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
