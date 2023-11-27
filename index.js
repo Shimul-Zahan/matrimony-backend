@@ -195,7 +195,6 @@ async function run() {
             if (user) {
                 isAdmin = user?.role === 'admin';
             }
-            // console.log(isAdmin);
             res.send({ isAdmin });
         })
 
@@ -334,6 +333,25 @@ async function run() {
                 const result = await manageUsers.updateOne(query, updateField);
                 console.log(result)
                 // res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // approve-user-premium
+        app.patch('/manage-users-premium/:email', async (req, res) => {
+            try {
+                const email = req.params.email
+                console.log(email)
+                const updateDoc = {
+                    $set: {
+                        accountType: 'premium',
+                    },
+                };
+                const updateResult = await manageUsers.updateOne({ email: email }, updateDoc);
+                const updateUserpremium = await allUsers.updateOne({ userEmail: email}, updateDoc)
+                console.log(updateResult, updateUserpremium)
+                res.send(updateResult);
             } catch (error) {
                 console.log(error)
             }
