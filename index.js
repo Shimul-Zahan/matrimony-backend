@@ -77,8 +77,19 @@ async function run() {
                 const users = await allUsers.estimatedDocumentCount()
                 const male = await allUsers.countDocuments({ biodataType : 'male'})
                 const female = await allUsers.countDocuments({ biodataType : 'female'})
-                const premiumMember = await premiumRequests.estimatedDocumentCount()
-                res.send({users, male, female, premiumMember});
+                const premiumMember = await allUsers.countDocuments({ accountType: 'premium' })
+                const totalTk = await requesterCollections.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            totalRevenue: {
+                                $sum: "$paidTk"
+                            }
+                        }
+                    }
+                ]).toArray();
+                const totalTaka = totalTk.length > 0 ? totalTk[0].totalRevenue: 0
+                res.send({users, male, female, premiumMember, totalTaka});
             } catch (error) {
                 console.log(error)
             }
@@ -126,6 +137,32 @@ async function run() {
                 console.log(error)
             }
         })
+
+        // all contact request for admin 
+        app.get('/contact-request-for-admin', async (req, res) => {
+            try {
+                const result = await requesterCollections.find().toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // filter data
+        app.get('/filter-data', async (req, res) => {
+            try {
+                const lowAge = parseInt(req.query.low)
+                const highAge = parseInt(req.query.high)
+                console.log(lowAge, highAge)
+                const options = { $lt: highAge, $gt: lowAge };
+                const result = await allUsers.find({ age: options}).toArray();
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+
 
         // save all the new account details in db
         app.post('/users', async (req, res) => {
@@ -218,6 +255,25 @@ async function run() {
                 console.log(error)
             }
         })
+
+        // approve-contact-request
+        app.patch('/approve-contact-request', async (req, res) => {
+            try {
+                const id = req.query.id
+                const query = { _id: new ObjectId(id) }
+                const updateDoc = {
+                    $set: {
+                        status: 'approved',
+                    },
+                };
+                const updateResult = await requesterCollections.updateOne(query, updateDoc);
+                console.log(updateResult)
+                res.send(updateResult);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
 
         app.delete('/delete-favourite-bios', async (req, res) => {
             try {
