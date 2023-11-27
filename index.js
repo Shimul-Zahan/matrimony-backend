@@ -186,9 +186,20 @@ async function run() {
             const result = await successStoryCollection.find().toArray()
             res.send(result)
         })
+        
+        // user role
+        app.get("/user-role", async (req, res) => {
+            const email = req.query.email;
+            const user = await manageUsers.findOne({ email: email })
+            let isAdmin = false;
+            if (user) {
+                isAdmin = user?.role === 'admin';
+            }
+            // console.log(isAdmin);
+            res.send({ isAdmin });
+        })
 
-
-
+        
         // save all the new account details in db
         app.post('/users', async (req, res) => {
             try {
@@ -306,7 +317,29 @@ async function run() {
             }
         })
 
+        // manage users role
+        app.patch('/manage-users-role/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) }
+                console.log(id);
+                const updateField = {
+                    $set: {
+                        role: 'admin'
+                    }
+                }
+                console.log(updateField)
+                const user = await manageUsers.findOne(query);
+                console.log(user)
+                const result = await manageUsers.updateOne(query, updateField);
+                console.log(result)
+                // res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
 
+        // delete favourite biodata
         app.delete('/delete-favourite-bios', async (req, res) => {
             try {
                 const id = req.query.id;
