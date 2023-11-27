@@ -34,6 +34,7 @@ async function run() {
         const premiumRequests = client.db("matrmonyDB").collection("premiumRequests");
         const favouriteCollection = client.db("matrmonyDB").collection("favouriteCollection");
         const requesterCollections = client.db("matrmonyDB").collection("requesterCollections");
+        const successStoryCollection = client.db("matrmonyDB").collection("successStoryCollection");
 
         app.get('/', async (req, res) => {
             res.send('Hello i am ready')
@@ -153,13 +154,37 @@ async function run() {
             try {
                 const lowAge = parseInt(req.query.low)
                 const highAge = parseInt(req.query.high)
-                console.log(lowAge, highAge)
-                const options = { $lt: highAge, $gt: lowAge };
-                const result = await allUsers.find({ age: options}).toArray();
+                const division = req.query.division;
+                const gender = req.query.gender;
+                console.log(lowAge, highAge, division, gender)
+                if (lowAge || highAge) {
+                    const options = { $lt: highAge, $gt: lowAge };
+                    const result = await allUsers.find({ age: options }).toArray();
+                    console.log(result, 'age')
+                    return res.send(result)
+                }
+                if (gender) {
+                    const result = await allUsers.find({ biodataType: gender }).toArray();
+                    console.log(result, 'gender')
+                    return res.send(result)
+                }
+                if (division) {
+                    const result = await allUsers.find({ permanentDivision: division }).toArray();
+                    console.log(result, 'div')
+                    return res.send(result)
+                }
+                const result = await allUsers.find().toArray();
+                console.log(result)
                 res.send(result);
             } catch (error) {
                 console.log(error)
             }
+        })
+
+        // get success story 
+        app.get("/successStory", async (req, res) => {
+            const result = await successStoryCollection.find().toArray()
+            res.send(result)
         })
 
 
@@ -228,6 +253,13 @@ async function run() {
             } catch (error) {
                 console.log(error)
             }
+        })
+
+        //successStory
+        app.post('/success-story', async (req, res) => {
+            const successStory = req.body
+            const storyReview = await successStoryCollection.insertOne(successStory)
+            res.send(storyReview)
         })
 
 
