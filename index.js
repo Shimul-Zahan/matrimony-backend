@@ -43,7 +43,7 @@ async function run() {
         // get all data
         app.get('/all-users', async (req, res) => {
             try {
-                const result = await allUsers.find().toArray()
+                const result = await allUsers.find().sort({age: -1}).toArray()
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -79,6 +79,7 @@ async function run() {
                 const male = await allUsers.countDocuments({ biodataType : 'male'})
                 const female = await allUsers.countDocuments({ biodataType : 'female'})
                 const premiumMember = await allUsers.countDocuments({ accountType: 'premium' })
+                const totalMarriage = await successStoryCollection.estimatedDocumentCount();
                 const totalTk = await requesterCollections.aggregate([
                     {
                         $group: {
@@ -90,7 +91,7 @@ async function run() {
                     }
                 ]).toArray();
                 const totalTaka = totalTk.length > 0 ? totalTk[0].totalRevenue: 0
-                res.send({users, male, female, premiumMember, totalTaka});
+                res.send({users, male, female, premiumMember, totalTaka, totalMarriage});
             } catch (error) {
                 console.log(error)
             }
