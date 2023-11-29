@@ -2,14 +2,18 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 5000;
+const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const stripe = require("stripe")('sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk5W0Z2N0syCZ31WYnu3BeB0StuCuiBP5WBdIh4lqAWbPQZSmcgv4009tnwiwQR');
-// sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk5W0Z2N0syCZ31WYnu3BeB0StuCuiBP5WBdIh4lqAWbPQZSmcgv4009tnwiwQR
+
+
 app.use(cors({
     origin: ['http://localhost:5173'],
     credentials: true,
 }));
 app.use(express.json())
+app.use(cookieParser())
 
 
 
@@ -24,6 +28,22 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+
+const verifyToken = (req, res, next) => {
+    const token = req.cookies?.token
+    console.log(token)
+    if (!token) {
+        return res.status(401).send({ message: "unauthorized access" })
+    }
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+        if (err) {
+            console.log(err)
+            return res.status(403).send({ message: 'Access forbiden' })
+        }
+        req.decode = decoded
+        next();
+    })
+}
 
 async function run() {
     try {
@@ -43,7 +63,25 @@ async function run() {
         // get all data
         app.get('/all-users', async (req, res) => {
             try {
-                const result = await allUsers.find().sort({age: -1}).toArray()
+                const pageNumber = parseInt(req.query.page);
+                console.log(pageNumber)
+                if (pageNumber) {
+                    const result = await allUsers.find().skip(pageNumber * 5).limit(5).toArray();
+                    // console.log(result)
+                    return res.send(result)
+                }
+                const result = await allUsers.find().sort({ age: -1 }).toArray()
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        app.get('/all-users-biodatas', async (req, res) => {
+            try {
+                const limit = 5;
+                const page = parseInt(req.query.page);
+                const result = await allUsers.find().skip(page * limit).limit(limit).toArray();
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -54,12 +92,21 @@ async function run() {
         app.get('/user/:id', async (req, res) => {
             try {
                 const id = req.params.id;
-                const result = await allUsers.findOne({_id: new ObjectId(id)})
+                const result = await allUsers.findOne({ _id: new ObjectId(id) })
                 res.send(result);
             } catch (error) {
                 console.log(error)
             }
         })
+
+        app.get('/count', async (req, res) => {
+            try {
+                const count = await allUsers.estimatedDocumentCount();
+                res.send({ count });
+            } catch (error) {
+                console.error(error);
+            }
+        });
 
         // view biodata api
         app.get('/view-biodata', async (req, res) => {
@@ -76,8 +123,8 @@ async function run() {
         app.get('/statistics', async (req, res) => {
             try {
                 const users = await allUsers.estimatedDocumentCount()
-                const male = await allUsers.countDocuments({ biodataType : 'male'})
-                const female = await allUsers.countDocuments({ biodataType : 'female'})
+                const male = await allUsers.countDocuments({ biodataType: 'male' })
+                const female = await allUsers.countDocuments({ biodataType: 'female' })
                 const premiumMember = await allUsers.countDocuments({ accountType: 'premium' })
                 const totalMarriage = await successStoryCollection.estimatedDocumentCount();
                 const totalTk = await requesterCollections.aggregate([
@@ -90,8 +137,8 @@ async function run() {
                         }
                     }
                 ]).toArray();
-                const totalTaka = totalTk.length > 0 ? totalTk[0].totalRevenue: 0
-                res.send({users, male, female, premiumMember, totalTaka, totalMarriage});
+                const totalTaka = totalTk.length > 0 ? totalTk[0].totalRevenue : 0
+                res.send({ users, male, female, premiumMember, totalTaka, totalMarriage });
             } catch (error) {
                 console.log(error)
             }
@@ -112,7 +159,7 @@ async function run() {
             try {
                 const email = req.query.email;
                 console.log(email)
-                const result = await favouriteCollection.find({ userEmail : email}).toArray();
+                const result = await favouriteCollection.find({ userEmail: email }).toArray();
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -153,29 +200,38 @@ async function run() {
         // filter data
         app.get('/filter-data', async (req, res) => {
             try {
-                const lowAge = parseInt(req.query.low)
-                const highAge = parseInt(req.query.high)
-                const division = req.query.division;
-                const gender = req.query.gender;
-                console.log(lowAge, highAge, division, gender)
-                if (lowAge || highAge) {
-                    const options = { $lt: highAge, $gt: lowAge };
-                    const result = await allUsers.find({ age: options }).toArray();
-                    console.log(result, 'age')
-                    return res.send(result)
+                let query = {};
+                const lowAge = parseInt(req.query.lowAge)
+                const highAge = parseInt(req.query.highAge)
+                const gender = req.query.search;
+                const division = req.query.gender;
+                const page = req.query.page;
+                let skip = page * 5;
+                // console.log(lowAge, highAge, skip, gender, division)
+                if (lowAge && highAge) {
+                    query.age = { $gte: lowAge, $lte: highAge }
                 }
                 if (gender) {
-                    const result = await allUsers.find({ biodataType: gender }).toArray();
-                    console.log(result, 'gender')
-                    return res.send(result)
+                    query.biodataType = gender;
                 }
                 if (division) {
-                    const result = await allUsers.find({ permanentDivision: division }).toArray();
-                    console.log(result, 'div')
-                    return res.send(result)
+                    query.permanentDivision = division;
                 }
-                const result = await allUsers.find().toArray();
-                console.log(result)
+                // console.log(query)
+                const result = await allUsers.find(query).skip(skip).limit(5).toArray();
+                // console.log(result)
+                res.send(result);
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        // get manage users by search
+        app.get('/search-manage-users', async (req, res) => {
+            try {
+                const searchValue = req.query.name;
+                const regex = new RegExp(`\\b${searchValue}`, 'iu');
+                const result = await manageUsers.find({ name: regex }).toArray()
                 res.send(result);
             } catch (error) {
                 console.log(error)
@@ -187,7 +243,7 @@ async function run() {
             const result = await successStoryCollection.find().toArray()
             res.send(result)
         })
-        
+
         // user role
         app.get("/user-role", async (req, res) => {
             const email = req.query.email;
@@ -199,14 +255,32 @@ async function run() {
             res.send({ isAdmin });
         })
 
-        
+        // jot er kaj
+        app.post('/jwt', async (req, res) => {
+            try {
+                const user = req.body;
+                console.log(process.env.SECRET_KEY)
+                const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: '10h' })
+                res.cookie('token', token, {
+                    httpOnly: true,
+                    secure: false,
+                }).send({ token: token });
+            } catch (error) {
+                console.log(error)
+            }
+        })
+
+        app.post('/logout', (req, res) => {
+            res.clearCookie('token', { maxAge: 0 }).send({ message: 'successfully cookie remove' });
+        })
+
         // save all the new account details in db
         app.post('/users', async (req, res) => {
             try {
                 const userInfo = req.body;
                 const available = await manageUsers.findOne({ email: userInfo.email })
                 if (available) {
-                    return res.send({message: 'user already in database'})
+                    return res.send({ message: 'user already in database' })
                 }
                 const result = await manageUsers.insertOne(userInfo);
                 res.send(result);
@@ -229,7 +303,7 @@ async function run() {
                     ...updateBiodata
                 }
                 console.log(update)
-                const result = await allUsers.updateOne(query, {$set: update});
+                const result = await allUsers.updateOne(query, { $set: update });
                 res.send(result);
                 console.log(result);
             } catch (error) {
@@ -244,7 +318,7 @@ async function run() {
                 const userInfo = req.body;
                 const available = await favouriteCollection.findOne({ $and: [{ biodataId: userInfo.biodataId }, { userEmail: userInfo.userEmail }] })
                 if (available) {
-                    return res.send({message: 'You choosen biodata already exist in your favourite biodata list'})
+                    return res.send({ message: 'You choosen biodata already exist in your favourite biodata list' })
                 }
                 const result = await favouriteCollection.insertOne(userInfo);
                 res.send(result);
@@ -276,13 +350,13 @@ async function run() {
             try {
                 const biodata = req.body;
                 const email = req.query.email;
-                const query = {userEmail: email}
+                const query = { userEmail: email }
                 const available = await allUsers.findOne(query);
                 if (available) {
-                    return res.send({message: 'Email already use. Please Login with a new email and add your biodata.'})
+                    return res.send({ message: 'Email already use. Please Login with a new email and add your biodata.' })
                 }
                 const count = await allUsers.estimatedDocumentCount();
-                const result = await allUsers.insertOne({biodataId: count + 1, ...biodata})
+                const result = await allUsers.insertOne({ biodataId: count + 1, ...biodata })
                 res.send(result)
             } catch (error) {
                 console.log(error)
@@ -373,7 +447,7 @@ async function run() {
                     },
                 };
                 const updateResult = await manageUsers.updateOne({ email: email }, updateDoc);
-                const updateUserpremium = await allUsers.updateOne({ userEmail: email}, updateDoc)
+                const updateUserpremium = await allUsers.updateOne({ userEmail: email }, updateDoc)
                 console.log(updateResult, updateUserpremium)
                 res.send(updateResult);
             } catch (error) {
