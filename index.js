@@ -207,7 +207,7 @@ async function run() {
                 const division = req.query.gender;
                 const page = req.query.page;
                 let skip = page * 5;
-                // console.log(lowAge, highAge, skip, gender, division)
+                console.log(lowAge, highAge, skip, gender, division)
                 if (lowAge && highAge) {
                     query.age = { $gte: lowAge, $lte: highAge }
                 }
@@ -217,9 +217,9 @@ async function run() {
                 if (division) {
                     query.permanentDivision = division;
                 }
-                // console.log(query)
-                const result = await allUsers.find(query).skip(skip).limit(5).toArray();
-                // console.log(result)
+                console.log(query)
+                const result = await allUsers.find(query).skip(skip).limit(6).toArray();
+                console.log(result)
                 res.send(result);
             } catch (error) {
                 console.log(error)
