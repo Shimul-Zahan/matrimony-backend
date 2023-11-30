@@ -70,7 +70,7 @@ async function run() {
                     // console.log(result)
                     return res.send(result)
                 }
-                const result = await allUsers.find().sort({ age: -1 }).toArray()
+                const result = await allUsers.find().sort({ age: 1 }).toArray()
                 res.send(result);
             } catch (error) {
                 console.log(error)
