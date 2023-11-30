@@ -9,7 +9,10 @@ const stripe = require("stripe")('sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk
 
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        'http://localhost:5173',
+        'https://memory-matrimony-bd.surge.sh'
+    ],
     credentials: true,
 }));
 app.use(express.json())
