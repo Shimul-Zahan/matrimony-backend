@@ -70,7 +70,7 @@ async function run() {
                 const pageNumber = parseInt(req.query.page);
                 console.log(pageNumber)
                 if (pageNumber) {
-                    const result = await allUsers.find().skip(pageNumber * 5).limit(5).toArray();
+                    const result = await allUsers.find().skip(pageNumber * 9).limit(9).toArray();
                     // console.log(result)
                     return res.send(result)
                 }
@@ -93,7 +93,7 @@ async function run() {
         })
 
         // viewdetails
-        app.get('/user/:id', async (req, res) => {
+        app.get('/user/:id', verifyToken, async (req, res) => {
             try {
                 const id = req.params.id;
                 const result = await allUsers.findOne({ _id: new ObjectId(id) })
@@ -276,7 +276,7 @@ async function run() {
         })
 
         app.post('/logout', (req, res) => {
-            res.clearCookie('token', { maxAge: 0 }).send({ message: 'successfully cookie remove' });
+            res.clearCookie('token', { maxAge: 0, sameSite: 'none', secure: true }).send({ success: true });
         })
 
         // save all the new account details in db
@@ -451,7 +451,7 @@ async function run() {
                         accountType: 'premium',
                     },
                 };
-                const updateResult = await manageUsers.updateOne({ email: email }, updateDoc);
+                const updateResult = await manageUsers.updateOne({ email: email }, updateDoc)
                 const updateUserpremium = await allUsers.updateOne({ userEmail: email }, updateDoc)
                 console.log(updateResult, updateUserpremium)
                 res.send(updateResult);
