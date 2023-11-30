@@ -5,7 +5,7 @@ const port = process.env.PORT || 5000;
 const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const stripe = require("stripe")('sk_test_51OF1GOHUw9AEQwQEvRlzEAUHSGAOeBfwquYTk5W0Z2N0syCZ31WYnu3BeB0StuCuiBP5WBdIh4lqAWbPQZSmcgv4009tnwiwQR');
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 
 app.use(cors({
@@ -15,6 +15,7 @@ app.use(cors({
     ],
     credentials: true,
 }));
+
 app.use(express.json())
 app.use(cookieParser())
 
@@ -266,7 +267,8 @@ async function run() {
                 const token = jwt.sign(user, process.env.SECRET_KEY, { expiresIn: '10h' })
                 res.cookie('token', token, {
                     httpOnly: true,
-                    secure: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
                 }).send({ token: token });
             } catch (error) {
                 console.log(error)
